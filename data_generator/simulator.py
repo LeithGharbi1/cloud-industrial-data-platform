@@ -1,96 +1,114 @@
 import random
 import time
 from datetime import datetime
-import csv
-
+import requests
 # -----------------------------
 # CONFIGURATION
 # -----------------------------
 
-MACHINES = ["M1", "M2", "M3"]
+MACHINES = [
+    {"id": "M1", "type": "Injection", "line": "L1"},
+    {"id": "M2", "type": "Packaging", "line": "L1"},
+    {"id": "M3", "type": "Assembly", "line": "L2"}
+]
+
+OPERATORS = ["OP1", "OP2", "OP3", "OP4"]
 
 DEFECT_CODES = ["NONE", "D1", "D2", "D3"]
 
-OUTPUT_FILE = "machine_data.csv"
+OUTPUT_FILE = "data-lake/raw/machine_data.csv"
+
+SHIFTS = ["A", "B", "C"]
 
 # -----------------------------
-# MACHINE SIMULATION LOGIC
+# CORE LOGIC
 # -----------------------------
+
+def generate_cycle_time():
+    return round(random.uniform(5, 15), 2)
+
 
 def generate_production():
-    """
-    Simulate production count with realistic variability
-    """
-    base = random.randint(5, 15)
+    return random.randint(5, 20)
 
-    # simulate occasional boost or drop
-    variation = random.choice([-3, -2, 0, 1, 2, 3])
 
-    return max(0, base + variation)
+def generate_quality(units):
+    defect_ratio = random.uniform(0, 0.3)
+
+    units_nok = int(units * defect_ratio)
+    units_ok = units - units_nok
+
+    return units_ok, units_nok
 
 
 def generate_defect():
-    """
-    Simulate defect occurrence (biased towards no defect)
-    """
     weights = [0.7, 0.1, 0.1, 0.1]
-    return random.choices(DEFECT_CODES, weights=weights)[0]
+    code = random.choices(DEFECT_CODES, weights=weights)[0]
+    return code
+
+
+def generate_environment():
+    return {
+        "temperature": round(random.uniform(60, 90), 2),
+        "vibration": round(random.uniform(0.1, 1.0), 2)
+    }
 
 
 def generate_downtime():
-    """
-    Simulate machine downtime (rare event)
-    """
     return 1 if random.random() < 0.05 else 0
 
 
 def generate_event():
-    """
-    Generate a single machine event
-    """
+    machine = random.choice(MACHINES)
+    units = generate_production()
+    ok, nok = generate_quality(units)
+    env = generate_environment()
+
     return {
-        "id_machine": random.choice(MACHINES),
+        "id_machine": machine["id"],
+        "machine_type": machine["type"],
+        "line_id": machine["line"],
+
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "production_count": generate_production(),
+        "shift": random.choice(SHIFTS),
+        "production_order_id": f"PO{random.randint(1000,9999)}",
+
+        "cycle_time": generate_cycle_time(),
+
+        "units_produced": units,
+        "units_ok": ok,
+        "units_nok": nok,
+
         "defect_code": generate_defect(),
-        "downtime": generate_downtime()
+        "defect_category": "mechanical",
+
+        "downtime": generate_downtime(),
+        "downtime_reason": None,
+
+        "temperature": env["temperature"],
+        "vibration_level": env["vibration"],
+
+        "operator_id": random.choice(OPERATORS)
     }
 
 
 # -----------------------------
-# DATA STREAM SIMULATION
+# STREAMING ENGINE
 # -----------------------------
 
+API_URL = "http://127.0.0.1:8000/ingest"
+
 def stream_data(interval=2):
-    """
-    Simulate real-time data stream
-    """
-    print("Starting industrial data stream...")
+    print("Streaming to FastAPI ingestion layer...")
 
-    # create file + header if not exists
-    with open(OUTPUT_FILE, mode="a", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=[
-            "id_machine",
-            "timestamp",
-            "production_count",
-            "defect_code",
-            "downtime"
-        ])
+    while True:
+        event = generate_event()
 
-        # write header only if file is empty
-        file.seek(0, 2)
-        if file.tell() == 0:
-            writer.writeheader()
+        response = requests.post(API_URL, json=event)
 
-        while True:
-            event = generate_event()
+        print(response.json())
 
-            writer.writerow(event)
-
-            print(event)
-
-            time.sleep(interval)
-
+        time.sleep(interval)
 
 # -----------------------------
 # MAIN
