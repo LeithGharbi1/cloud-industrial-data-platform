@@ -97,7 +97,7 @@ def generate_event():
 # STREAMING ENGINE
 # -----------------------------
 
-API_URL = os.getenv("API_URL", "http://ingestion:8000/ingest")
+API_URL = "https://cloud-industrial-data-platform.onrender.com/ingest"
 
 def stream_data(interval=2):
     print("Streaming to FastAPI ingestion layer...")
