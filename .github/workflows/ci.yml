@@ -36,12 +36,12 @@ jobs:
 
       - name: Build and tag images
         run: |
-          docker build -f docker/Dockerfile.api -t ghcr.io/${{ github.repository }}/api:latest .
-          docker build -f docker/Dockerfile.worker -t ghcr.io/${{ github.repository }}/worker:latest .
-          docker build -f docker/Dockerfile.generator -t ghcr.io/${{ github.repository }}/generator:latest .
+          docker build -f docker/Dockerfile.api -t ghcr.io/leithgharbi1/cloud-industrial-data-platform/api:latest .
+          docker build -f docker/Dockerfile.worker -t ghcr.io/leithgharbi1/cloud-industrial-data-platform/worker:latest .
+          docker build -f docker/Dockerfile.generator -t ghcr.io/leithgharbi1/cloud-industrial-data-platform/generator:latest .
 
       - name: Push images
         run: |
-          docker push ghcr.io/${{ github.repository }}/api:latest
-          docker push ghcr.io/${{ github.repository }}/worker:latest
-          docker push ghcr.io/${{ github.repository }}/generator:latest
+          docker push ghcr.io/leithgharbi1/cloud-industrial-data-platform/api:latest
+          docker push ghcr.io/leithgharbi1/cloud-industrial-data-platform/worker:latest
+          docker push ghcr.io/leithgharbi1/cloud-industrial-data-platform/generator:latest
